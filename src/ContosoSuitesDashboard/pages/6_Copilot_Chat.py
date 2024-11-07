@@ -7,7 +7,7 @@ def send_message_to_copilot(message):
     """Send a message to the Copilot chat endpoint."""
     api_endpoint = st.secrets["api"]["endpoint"]
     # Exercise 5 Task 2 TODO #11: Send a POST request to the Copilot chat endpoint with the user message and assign the return value to response.
-    response = ""
+    response = requests.get(f"{api_endpoint}/MaintenanceCopilotChat", data=message, timeout=10, verify=False)
     return response.text
 
 def main():

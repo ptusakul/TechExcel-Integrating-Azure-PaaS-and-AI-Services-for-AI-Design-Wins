@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Embeddings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,19 +48,25 @@ builder.Services.AddSingleton<Kernel>((_) =>
         endpoint: builder.Configuration["AzureOpenAI:Endpoint"]!,
         apiKey: builder.Configuration["AzureOpenAI:ApiKey"]!
     );
+    # pragma warning disable SKEXP0010
+    kernelBuilder.AddAzureOpenAITextEmbeddingGeneration(
+        deploymentName: builder.Configuration["AzureOpenAI:EmbeddingDeploymentName"]!,
+        endpoint: builder.Configuration["AzureOpenAI:Endpoint"]!,
+        apiKey: builder.Configuration["AzureOpenAI:ApiKey"]!
+    );
     kernelBuilder.Plugins.AddFromType<DatabaseService>();
     return kernelBuilder.Build();
 });
 
 // Create a single instance of the AzureOpenAIClient to be shared across the application.
-builder.Services.AddSingleton<AzureOpenAIClient>((_) =>
-{
-    var endpoint = new Uri(builder.Configuration["AzureOpenAI:Endpoint"]!);
-    var credentials = new AzureKeyCredential(builder.Configuration["AzureOpenAI:ApiKey"]!);
+// builder.Services.AddSingleton<AzureOpenAIClient>((_) =>
+// {
+//     var endpoint = new Uri(builder.Configuration["AzureOpenAI:Endpoint"]!);
+//     var credentials = new AzureKeyCredential(builder.Configuration["AzureOpenAI:ApiKey"]!);
 
-    var client = new AzureOpenAIClient(endpoint, credentials);
-    return client;
-});
+//     var client = new AzureOpenAIClient(endpoint, credentials);
+//     return client;
+// });
 
 var app = builder.Build();
 
@@ -148,7 +155,9 @@ app.MapPost("/VectorSearch", async ([FromBody] float[] queryVector, [FromService
 app.MapPost("/MaintenanceCopilotChat", async ([FromBody] string message, [FromServices] MaintenanceCopilot copilot) =>
 {
     // Exercise 5 Task 2 TODO #10: Insert code to call the Chat function on the MaintenanceCopilot. Don't forget to remove the NotImplementedException.
-    throw new NotImplementedException();
+    // throw new NotImplementedException();
+    var results = await copilot.Chat(message);
+    return results;
 })
     .WithName("Copilot")
     .WithOpenApi();

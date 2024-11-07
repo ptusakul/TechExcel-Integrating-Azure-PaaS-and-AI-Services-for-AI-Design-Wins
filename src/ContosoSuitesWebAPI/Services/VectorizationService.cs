@@ -1,17 +1,22 @@
 ﻿using Azure.AI.OpenAI;
 using ContosoSuitesWebAPI.Entities;
 using Microsoft.Azure.Cosmos;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Embeddings;
+using OpenAI.Embeddings;
 
 namespace ContosoSuitesWebAPI.Services
 {
     /// <summary>
     /// The vectorization service for generating embeddings and executing vector searches.
     /// </summary>
-    public class VectorizationService(AzureOpenAIClient openAIClient, CosmosClient cosmosClient, IConfiguration configuration) : IVectorizationService
+    // public class VectorizationService(AzureOpenAIClient openAIClient, CosmosClient cosmosClient, IConfiguration configuration) : IVectorizationService
+    public class VectorizationService(Kernel kernel, CosmosClient cosmosClient, IConfiguration configuration) : IVectorizationService
     {
-        private readonly AzureOpenAIClient _client = openAIClient;
+        // private readonly AzureOpenAIClient _client = openAIClient;
         private readonly CosmosClient _cosmosClient = cosmosClient;
         private readonly string _embeddingDeploymentName = configuration.GetValue<string>("AzureOpenAI:EmbeddingDeploymentName") ?? "text-embedding-ada-002";
+        private readonly Kernel _kernel = kernel;
 
         /// <summary>
         /// Translate a text string into a vector embedding.
@@ -19,14 +24,18 @@ namespace ContosoSuitesWebAPI.Services
         /// </summary>
         public async Task<float[]> GetEmbeddings(string text)
         {
-            var embeddingClient = _client.GetEmbeddingClient(_embeddingDeploymentName);
+            # pragma warning disable SKEXP0001
+            // var embeddingClient = _client.GetEmbeddingClient(_embeddingDeploymentName);
+            var embeddingService = _kernel.GetRequiredService<ITextEmbeddingGenerationService>();
 
             try
             {
                 // Generate a vector for the provided text.
-                var embeddings = await embeddingClient.GenerateEmbeddingAsync(text);
+                // var embeddings = await embeddingClient.GenerateEmbeddingAsync(text);
+                var embeddings = await embeddingService.GenerateEmbeddingAsync(text);
 
-                var vector = embeddings.Value.Vector.ToArray();
+                // var vector = embeddings.Value.Vector.ToArray();
+                var vector = embeddings.ToArray();
 
                 // Return the vector embeddings.
                 return vector;
